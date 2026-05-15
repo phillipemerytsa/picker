@@ -32,18 +32,12 @@
       margin-bottom: 15px;
     }
 
-    input[type="number"],
-    textarea {
+    input[type="number"] {
       padding: 8px;
       margin-top: 5px;
       width: 100%;
       max-width: 400px;
       box-sizing: border-box;
-    }
-
-    textarea {
-      height: 140px;
-      resize: vertical;
     }
 
     button {
@@ -92,13 +86,6 @@
       font-size: 14px;
     }
 
-    .help-text {
-      font-size: 13px;
-      color: #666;
-      margin-top: 4px;
-      line-height: 1.5;
-    }
-
     @media print {
       #printButton,
       #runButton,
@@ -118,10 +105,10 @@
 
     <ol>
       <li>Leave the checkbox checked for occupied rooms.</li>
-      <li>Uncheck rooms that should NOT be included.</li>
-      <li>Enter the percentage of occupied rooms to randomly select.</li>
-      <li>Optionally enter room numbers to exclude manually (one per line).</li>
+      <li>Uncheck rooms that should NOT be included in the randomizer.</li>
+      <li>Enter the percentage of occupied rooms to test.</li>
       <li>Click <strong>Run Random Selection</strong>.</li>
+      <li>The percentage is calculated ONLY from checked rooms.</li>
       <li>Use the print button if you want a paper copy.</li>
     </ol>
   </div>
@@ -142,24 +129,6 @@
         max="100"
         value="10"
       />
-    </div>
-
-    <div class="control-group">
-      <label for="excludeRooms">
-        Additional Rooms To Exclude
-      </label>
-
-      <div class="help-text">
-        Enter one room number per line.
-      </div>
-
-      <textarea
-        id="excludeRooms"
-        placeholder="Example:
-202
-203
-205"
-      ></textarea>
     </div>
 
     <button id="runButton" onclick="runSelection()">
@@ -273,28 +242,16 @@
         return;
       }
 
-      // Read manual exclusions
-      const excludedInput =
-        document.getElementById("excludeRooms").value;
-
-      const manualExclusions = excludedInput
-        .split("\n")
-        .map(room => parseInt(room.trim()))
-        .filter(room => !isNaN(room));
-
       const eligibleRooms = [];
 
-      // ONLY checked rooms count toward percentage
+      // ONLY checked rooms count
       document.querySelectorAll(".occupied")
         .forEach(cb => {
 
           const room =
             parseInt(cb.dataset.room);
 
-          if (
-            cb.checked &&
-            !manualExclusions.includes(room)
-          ) {
+          if (cb.checked) {
             eligibleRooms.push(room);
           }
         });
@@ -328,7 +285,7 @@
         ];
       }
 
-      // Calculate selection count
+      // Calculate how many rooms to select
       const selectionCount = Math.max(
         1,
         Math.round(
