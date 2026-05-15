@@ -17,7 +17,10 @@
       margin-bottom: 10px;
     }
 
-    .controls {
+    .controls,
+    .instructions,
+    .table-container,
+    .results {
       background: white;
       padding: 15px;
       border-radius: 10px;
@@ -52,18 +55,11 @@
       color: white;
       font-size: 14px;
       margin-right: 10px;
+      margin-top: 10px;
     }
 
     button:hover {
       background: #1d4ed8;
-    }
-
-    .table-container {
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow-x: auto;
     }
 
     table {
@@ -86,14 +82,6 @@
       background: #fee2e2;
     }
 
-    .results {
-      margin-top: 20px;
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
     .selected-room {
       display: inline-block;
       background: #dc2626;
@@ -110,11 +98,33 @@
       margin-top: 4px;
       line-height: 1.5;
     }
+
+    @media print {
+      #printButton,
+      #runButton,
+      #clearButton {
+        display: none;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <h1>Random Drug Test Room Selector</h1>
+
+  <div class="instructions">
+    <h2>Directions</h2>
+
+    <ol>
+      <li>Leave the checkbox checked for occupied rooms.</li>
+      <li>Uncheck rooms that should NOT be included.</li>
+      <li>Enter the percentage of occupied rooms to randomly select.</li>
+      <li>Optionally enter room numbers to exclude manually (one per line).</li>
+      <li>Click <strong>Run Random Selection</strong>.</li>
+      <li>Use the print button if you want a paper copy.</li>
+    </ol>
+  </div>
 
   <div class="controls">
 
@@ -122,6 +132,7 @@
       <label for="percentage">
         Percentage of occupied rooms to test:
       </label>
+
       <br>
 
       <input
@@ -133,13 +144,42 @@
       />
     </div>
 
-    <button onclick="runSelection()">Run Random Selection</button>
-    <button onclick="clearSelections()">Clear Results</button>
+    <div class="control-group">
+      <label for="excludeRooms">
+        Additional Rooms To Exclude
+      </label>
+
+      <div class="help-text">
+        Enter one room number per line.
+      </div>
+
+      <textarea
+        id="excludeRooms"
+        placeholder="Example:
+202
+203
+205"
+      ></textarea>
+    </div>
+
+    <button id="runButton" onclick="runSelection()">
+      Run Random Selection
+    </button>
+
+    <button id="clearButton" onclick="clearSelections()">
+      Clear Results
+    </button>
+
+    <button id="printButton" onclick="window.print()">
+      🖨 Print Results
+    </button>
 
   </div>
 
   <div class="table-container">
+
     <table>
+
       <thead>
         <tr>
           <th>Room Number</th>
@@ -148,17 +188,28 @@
       </thead>
 
       <tbody id="roomTableBody"></tbody>
+
     </table>
+
   </div>
 
   <div class="results">
+
     <h2>Selected Rooms</h2>
-    <div id="resultsList">No rooms selected yet.</div>
+
+    <div id="resultsList">
+      No rooms selected yet.
+    </div>
+
   </div>
 
   <script>
-    const roomTableBody = document.getElementById("roomTableBody");
-    const resultsList = document.getElementById("resultsList");
+
+    const roomTableBody =
+      document.getElementById("roomTableBody");
+
+    const resultsList =
+      document.getElementById("resultsList");
 
     // Permanently excluded rooms
     const permanentlyExcludedRooms = [
@@ -180,10 +231,11 @@
       }
     }
 
-    // Create table rows
+    // Create room rows
     rooms.forEach(room => {
 
       const row = document.createElement("tr");
+
       row.id = `room-${room}`;
 
       row.innerHTML = `
@@ -210,81 +262,102 @@
         document.getElementById("percentage").value
       );
 
-      if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
-        alert("Please enter a valid percentage between 1 and 100.");
+      if (
+        isNaN(percentage) ||
+        percentage <= 0 ||
+        percentage > 100
+      ) {
+        alert(
+          "Please enter a valid percentage between 1 and 100."
+        );
         return;
       }
 
-      // Read excluded rooms (one per line)
-      const excludedInput = document
-        .getElementById("excludeRooms")
-        .value;
+      // Read manual exclusions
+      const excludedInput =
+        document.getElementById("excludeRooms").value;
 
       const manualExclusions = excludedInput
         .split("\n")
         .map(room => parseInt(room.trim()))
         .filter(room => !isNaN(room));
 
-      const occupiedRooms = [];
+      const eligibleRooms = [];
 
-      // Collect occupied rooms
-      document.querySelectorAll(".occupied").forEach(cb => {
+      // ONLY checked rooms count toward percentage
+      document.querySelectorAll(".occupied")
+        .forEach(cb => {
 
-        const room = parseInt(cb.dataset.room);
+          const room =
+            parseInt(cb.dataset.room);
 
-        if (
-          cb.checked &&
-          !manualExclusions.includes(room)
-        ) {
-          occupiedRooms.push(room);
-        }
-      });
+          if (
+            cb.checked &&
+            !manualExclusions.includes(room)
+          ) {
+            eligibleRooms.push(room);
+          }
+        });
 
-      if (occupiedRooms.length === 0) {
-        alert("No occupied rooms available for selection.");
+      if (eligibleRooms.length === 0) {
+
+        alert(
+          "No eligible occupied rooms available."
+        );
+
         return;
       }
 
-      // Shuffle randomly
-      for (let i = occupiedRooms.length - 1; i > 0; i--) {
+      // Shuffle rooms randomly
+      for (
+        let i = eligibleRooms.length - 1;
+        i > 0;
+        i--
+      ) {
 
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(
+          Math.random() * (i + 1)
+        );
 
-        [occupiedRooms[i], occupiedRooms[j]] = [
-          occupiedRooms[j],
-          occupiedRooms[i]
+        [
+          eligibleRooms[i],
+          eligibleRooms[j]
+        ] = [
+          eligibleRooms[j],
+          eligibleRooms[i]
         ];
       }
 
-      // Calculate number to pick
+      // Calculate selection count
       const selectionCount = Math.max(
         1,
         Math.round(
-          (percentage / 100) * occupiedRooms.length
+          (percentage / 100) *
+          eligibleRooms.length
         )
       );
 
-      const selected = occupiedRooms.slice(
-        0,
-        selectionCount
-      );
+      const selected =
+        eligibleRooms.slice(0, selectionCount);
 
       // Highlight selected rows
       selected.forEach(room => {
 
-        const row = document.getElementById(
-          `room-${room}`
-        );
+        const row =
+          document.getElementById(
+            `room-${room}`
+          );
 
         row.classList.add("selected");
       });
 
-      // Display results
+      // Display selected rooms
       resultsList.innerHTML = "";
 
       selected.forEach(room => {
 
-        const item = document.createElement("div");
+        const item =
+          document.createElement("div");
 
         item.className = "selected-room";
 
@@ -296,48 +369,16 @@
 
     function clearSelections() {
 
-      document.querySelectorAll("tr").forEach(row => {
-        row.classList.remove("selected");
-      });
+      document.querySelectorAll("tr")
+        .forEach(row => {
+          row.classList.remove("selected");
+        });
 
       resultsList.innerHTML =
         "No rooms selected yet.";
     }
+
   </script>
-
-</body>
-
-<head>
-    <meta charset="UTF-8">
-    <title>Print Button Example</title>
-    <style>
-        /* Optional: Hide the print button when printing */
-        @media print {
-            #printButton {
-                display: none;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <h1>My Web Page</h1>
-    <p>This is the content that will be printed.</p>
-
-    <!-- Print Button -->
-    <button id="printButton">🖨 Print this page</button>
-
-    <script>
-        // Attach click event to the button
-        document.getElementById("printButton").addEventListener("click", function () {
-            try {
-                window.print(); // Opens the browser's print dialog
-            } catch (error) {
-                alert("Printing is not supported in this browser.");
-                console.error(error);
-            }
-        });
-    </script>
 
 </body>
 </html>
