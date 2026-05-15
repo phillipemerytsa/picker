@@ -307,3 +307,40 @@
 
 </body>
 </html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Print Button Example</title>
+    <style>
+        /* Optional: Hide the print button when printing */
+        @media print {
+            #printButton {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>My Web Page</h1>
+    <p>This is the content that will be printed.</p>
+
+    <!-- Print Button -->
+    <button id="printButton">🖨 Print this page</button>
+
+    <script>
+        // Attach click event to the button
+        document.getElementById("printButton").addEventListener("click", function () {
+            try {
+                window.print(); // Opens the browser's print dialog
+            } catch (error) {
+                alert("Printing is not supported in this browser.");
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+</html>
