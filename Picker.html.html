@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Room Drug Test Selector</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      padding: 20px;
+      color: #222;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .control-group {
+      margin-bottom: 15px;
+    }
+
+    input[type="number"],
+    textarea {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      height: 140px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-size: 15px;
+    }
+
+    tr.selected {
+      background: #fee2e2;
+    }
+
+    .results {
+      margin-top: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .selected-room {
+      display: inline-block;
+      background: #dc2626;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 5px;
+      margin: 5px;
+      font-size: 14px;
+    }
+
+    .help-text {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Random Drug Test Room Selector</h1>
+
+  <div class="controls">
+
+    <div class="control-group">
+      <label for="percentage">
+        Percentage of occupied rooms to test:
+      </label>
+      <br>
+
+      <input
+        type="number"
+        id="percentage"
+        min="1"
+        max="100"
+        value="10"
+      />
+    </div>
+
+    <div class="control-group">
+      <label for="excludeRooms">
+        Exclude Room Numbers From Selection:
+      </label>
+      <br>
+
+      <textarea
+        id="excludeRooms"
+        placeholder="Example:
+156
+160
+188"
+      ></textarea>
+
+      <div class="help-text">
+        Enter one room number per line.
+      </div>
+    </div>
+
+    <button onclick="runSelection()">Run Random Selection</button>
+    <button onclick="clearSelections()">Clear Results</button>
+
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Room Number</th>
+          <th>Occupied</th>
+        </tr>
+      </thead>
+
+      <tbody id="roomTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="results">
+    <h2>Selected Rooms</h2>
+    <div id="resultsList">No rooms selected yet.</div>
+  </div>
+
+  <script>
+    const roomTableBody = document.getElementById("roomTableBody");
+    const resultsList = document.getElementById("resultsList");
+
+    // Permanently excluded rooms
+    const permanentlyExcludedRooms = [
+      202, 203, 205, 224, 226, 229
+    ];
+
+    // Build room list
+    const rooms = [];
+
+    for (let i = 156; i <= 175; i++) {
+      if (!permanentlyExcludedRooms.includes(i)) {
+        rooms.push(i);
+      }
+    }
+
+    for (let i = 178; i <= 232; i++) {
+      if (!permanentlyExcludedRooms.includes(i)) {
+        rooms.push(i);
+      }
+    }
+
+    // Create table rows
+    rooms.forEach(room => {
+
+      const row = document.createElement("tr");
+      row.id = `room-${room}`;
+
+      row.innerHTML = `
+        <td><strong>${room}</strong></td>
+
+        <td>
+          <input
+            type="checkbox"
+            class="occupied"
+            data-room="${room}"
+            checked
+          />
+        </td>
+      `;
+
+      roomTableBody.appendChild(row);
+    });
+
+    function runSelection() {
+
+      clearSelections();
+
+      const percentage = parseFloat(
+        document.getElementById("percentage").value
+      );
+
+      if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+        alert("Please enter a valid percentage between 1 and 100.");
+        return;
+      }
+
+      // Read excluded rooms (one per line)
+      const excludedInput = document
+        .getElementById("excludeRooms")
+        .value;
+
+      const manualExclusions = excludedInput
+        .split("\n")
+        .map(room => parseInt(room.trim()))
+        .filter(room => !isNaN(room));
+
+      const occupiedRooms = [];
+
+      // Collect occupied rooms
+      document.querySelectorAll(".occupied").forEach(cb => {
+
+        const room = parseInt(cb.dataset.room);
+
+        if (
+          cb.checked &&
+          !manualExclusions.includes(room)
+        ) {
+          occupiedRooms.push(room);
+        }
+      });
+
+      if (occupiedRooms.length === 0) {
+        alert("No occupied rooms available for selection.");
+        return;
+      }
+
+      // Shuffle randomly
+      for (let i = occupiedRooms.length - 1; i > 0; i--) {
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [occupiedRooms[i], occupiedRooms[j]] = [
+          occupiedRooms[j],
+          occupiedRooms[i]
+        ];
+      }
+
+      // Calculate number to pick
+      const selectionCount = Math.max(
+        1,
+        Math.round(
+          (percentage / 100) * occupiedRooms.length
+        )
+      );
+
+      const selected = occupiedRooms.slice(
+        0,
+        selectionCount
+      );
+
+      // Highlight selected rows
+      selected.forEach(room => {
+
+        const row = document.getElementById(
+          `room-${room}`
+        );
+
+        row.classList.add("selected");
+      });
+
+      // Display results
+      resultsList.innerHTML = "";
+
+      selected.forEach(room => {
+
+        const item = document.createElement("div");
+
+        item.className = "selected-room";
+
+        item.textContent = `Room ${room}`;
+
+        resultsList.appendChild(item);
+      });
+    }
+
+    function clearSelections() {
+
+      document.querySelectorAll("tr").forEach(row => {
+        row.classList.remove("selected");
+      });
+
+      resultsList.innerHTML =
+        "No rooms selected yet.";
+    }
+  </script>
+
+</body>
+</html>
