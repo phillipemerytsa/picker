@@ -86,6 +86,12 @@
       font-size: 14px;
     }
 
+    .excluded-note {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
     @media print {
       #printButton,
       #runButton,
@@ -111,6 +117,11 @@
       <li>The percentage is calculated ONLY from checked rooms.</li>
       <li>Use the print button if you want a paper copy.</li>
     </ol>
+
+    <div class="excluded-note">
+      Permanently excluded rooms:
+      180–201, 202, 203, 204, 205, 224, 226, 229
+    </div>
   </div>
 
   <div class="controls">
@@ -182,19 +193,20 @@
 
     // Permanently excluded rooms
     const permanentlyExcludedRooms = [
-      202, 203, 205, 224, 226, 229
+      180, 181, 182, 183, 184,
+      185, 186, 187, 188, 189,
+      190, 191, 192, 193, 194,
+      195, 196, 197, 198, 199,
+      200, 201,
+      202, 203, 204, 205,
+      224, 226, 229
     ];
 
     // Build room list
     const rooms = [];
 
-    for (let i = 156; i <= 175; i++) {
-      if (!permanentlyExcludedRooms.includes(i)) {
-        rooms.push(i);
-      }
-    }
+    for (let i = 156; i <= 232; i++) {
 
-    for (let i = 178; i <= 232; i++) {
       if (!permanentlyExcludedRooms.includes(i)) {
         rooms.push(i);
       }
@@ -305,7 +317,9 @@
             `room-${room}`
           );
 
-        row.classList.add("selected");
+        if (row) {
+          row.classList.add("selected");
+        }
       });
 
       // Display selected rooms
@@ -339,3 +353,4 @@
 
 </body>
 </html>
+I prefer this response
